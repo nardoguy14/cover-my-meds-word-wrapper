@@ -1,0 +1,133 @@
+module.exports = {
+    /**
+     * Gets input parameters of file to parse and max width of lines
+     *
+     */
+    getParams: function(callback){
+        const readline = require('readline').createInterface({
+            input: process.stdin,
+            output: process.stdout
+        })
+
+        const xx = readline.question('Please enter filename and column \nlength separated by space: ', (params) => {
+
+            var parametersList = params.split(' ')
+            readline.close()
+            callback(parametersList)
+        })
+    },
+
+    /**
+     * Parses given document and returns array
+     * of lines
+     *
+     */
+    parseDocument: function(documentName, callback) {
+        linesOfDocument = []
+        const readline = require('readline');
+        const fs = require('fs');
+
+        var rl = readline.createInterface({
+            input: fs.createReadStream(documentName)
+        });
+
+        var line_no = 0;
+        rl.on('line', function(line) {
+            line_no++;
+            linesOfDocument.push(line);
+            // console.log(line);
+        });
+
+        // end
+        rl.on('close', function(line) {
+            callback(linesOfDocument)
+        });
+    },
+
+    /**
+     * Given a string and an index,
+     * iterates backwards on the string to find the index
+     * of the last space
+     *
+     * @param string
+     * @param index
+     * @returns {number|*}
+     */
+    lookForLastSpace: function(string, index){
+        for(var i = index; i > 0; i--){
+            if(string[i] === ' ')
+                return i
+        }
+        return -1
+    },
+
+    /**
+     * Given a list of lines, will append together all
+     * paragraphs into a single line and return back a list of
+     * just single paragraph lines and empty lines.
+     *
+     * @param linesOfDocument
+     * @returns {Array}
+     */
+    combineLines: function(linesOfDocument){
+
+        var joinedLines = []
+        var currentBuildingLine = ""
+        for(var i = 0; i <linesOfDocument.length; i++){
+            if(linesOfDocument[i] === ""){
+                joinedLines.push(currentBuildingLine)
+                currentBuildingLine = ""
+                joinedLines.push("\n")
+            }
+            else{
+                currentBuildingLine += linesOfDocument[i] + " "
+            }
+        }
+        joinedLines.push(currentBuildingLine.trim())
+        return joinedLines
+    },
+
+    /**
+     * Iterates through list of lines, for each line
+     * will take increments of line defined by size N.
+     * Saves new line where each line is less than or equal
+     * to size N.
+     *
+     * Returns back a list of new lines
+     * @param linesOfDocument list of lines
+     * @param N max length that line can be
+     */
+    parse: function(linesOfDocument, N){
+
+        linesOfDocument = this.combineLines(linesOfDocument)
+
+        var maxLength = N
+        var indexMax = maxLength - 1
+
+        var newDocument = []
+        for(var i = 0; i< linesOfDocument.length; i ++){
+            var currentLine = linesOfDocument[i]
+            var newLines = []
+            while(currentLine !== ""){
+                if(currentLine.length <= N){
+                    newLines.push(currentLine)
+                    currentLine = ""
+                }
+                else if(currentLine[indexMax] === ' '){
+                    newLines.push(currentLine.substring(0, indexMax))
+                    currentLine = currentLine.substring(indexMax).trim()
+                }
+                else {
+                    var indexOfSpace = this.lookForLastSpace(currentLine, indexMax)
+                    newLines.push(currentLine.substring(0, indexOfSpace))
+                    currentLine = currentLine.substring(indexOfSpace).trim()
+                }
+            }
+
+            var newText = newLines.join("\n")
+            newDocument.push(newText)
+        }
+
+        return newDocument
+    }
+}
